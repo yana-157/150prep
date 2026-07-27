@@ -15,8 +15,10 @@ The ten episodes cover:
 9. Imperative Programming and References
 10. Asynchronous Programming
 
-Total runtime: 57:04.
+Total runtime: 68:41.
 
 The site supports individual playback and continuous playback in lecture order.
 Readable episode transcripts are included in `transcripts/`.
 
+The episodes are narrated with the `en-US-AvaNeural` voice at a slightly reduced
+speaking rate for technical material.
