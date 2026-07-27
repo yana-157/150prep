@@ -1,0 +1,86 @@
+15-150 Review Podcast. Episode one: Lecture 11, Continuation-Passing Style.
+
+This lecture begins with a small problem about pipelines and ends with a completely different way to represent control flow. The central idea is simple: instead of a function returning a result to its caller, the caller gives the function another function describing what should happen next.
+
+That "what happens next" function is called a continuation.
+
+Recall the pipe operator. The declaration "infix pipe" followed by "fun x pipe f equals f x" lets us send a value forward into a function. A pipeline is pleasant when every stage uses the preceding result once. But if a stage needs the same value twice, such as using a list both to calculate its sum and its length, we must name that intermediate result. We can write a let expression, or we can pipe into a lambda that names the result. This explicitly reveals the control flow.
+
+CPS takes that explicit style seriously. A continuation is a function passed as an argument that says what to do after the current computation finishes. If an ordinary function has type "t one to t two," its CPS version usually has type "t one to, open parenthesis, t two to alpha, close parenthesis, to alpha." The old result type becomes the input type of the continuation. The final alpha is polymorphic because the continuation decides what the whole computation ultimately produces.
+
+For example, ordinary addition has type int to int to int. Its CPS version can be:
+
+"fun add C P S x y k equals k of x plus y."
+
+Its type is int to int to, open parenthesis, int to alpha, close parenthesis, to alpha.
+
+But merely calling a continuation does not automatically make a function CPS. If we write "fun fact C P S n k equals k of fact n," we have hidden the entire original recursive computation inside the function. That recursive call is not a tail call. The lecture gives three requirements:
+
+First, a CPS function takes and uses continuations.
+
+Second, every call to another CPS function, including a recursive call, is a tail call.
+
+Third, every call to a continuation is also a tail call.
+
+The slogan is: CPS equals continuation use plus tail recursion.
+
+Now translate factorial. In direct style, the recursive case computes fact of n minus one, binds that result, and multiplies it by n. The work "multiply by n" happens after the recursive call returns. That means the runtime must remember an instruction.
+
+In CPS, we write the instruction now and pass it into the recursive call:
+
+"fun fact C P S zero k equals k one."
+
+"fact C P S n k equals fact C P S of n minus one, with continuation fn recursive answer arrow k of n times recursive answer."
+
+The recursive call is now the last operation. The multiplication is frozen inside a lambda. Remember: a lambda body does not run when the lambda is created. It is a package of instructions waiting for an input.
+
+The continuation behaves like a functional accumulator. Calling factorial C P S on three builds instructions that say: when you obtain the answer for zero, multiply by one, then two, then three, and finally call the original continuation. At the base case, the value one enters that instruction chain and the accumulated work runs.
+
+Pause and predict. If the initial continuation is "fn x arrow Int dot toString of x," what does factorial C P S three produce?
+
+It produces the string "6." Factorial still computes six, but the continuation decides that the final answer is a string.
+
+There is a mechanical CPS translation process.
+
+One: add a continuation whose input is the old return type, and change the new return type to the continuation's result type.
+
+Two: replace each ordinary returned value v with k of v.
+
+Three: when a recursive call appears inside a larger expression, pretend its result is already stored in a fresh name such as recursive answer.
+
+Four: make the CPS recursive call a tail call, passing a continuation that binds that fresh result and performs the old remaining work.
+
+For map, direct style says the empty list returns empty, and the cons case returns f x cons map f xs. In CPS:
+
+"map C P S f empty k equals k empty."
+
+"map C P S f of x cons xs, k, equals map C P S f xs, with continuation fn result arrow k of f x cons result."
+
+Notice that f itself is still direct style here. Only map is being translated. If f were also a CPS function, then its call would need its own continuation.
+
+The most important extension is translating a function that returns an option. An option represents two possible control-flow outcomes: SOME x or NONE. Instead of one continuation consuming an option, we can use two continuations.
+
+The success continuation has type "t to alpha."
+
+The failure continuation has type "unit to alpha."
+
+Whenever the direct function returns SOME x, call the success continuation on x. Whenever it returns NONE, call the failure continuation on unit. Whenever direct code performs a case analysis on a recursive optional result, the SOME branch becomes the recursive call's success continuation and the NONE branch becomes its failure continuation.
+
+The lecture's tree search is the model example. Direct search returns SOME x when the current node satisfies the predicate. Otherwise, it searches the left subtree. If that gives SOME, it keeps the result; if it gives NONE, it searches the right subtree.
+
+In CPS, an empty tree calls failure. A satisfying node calls success on its value. Otherwise, search the left subtree with the same success continuation, but with a new failure continuation that begins searching the right subtree. The choice of what to do after left-search failure is encoded as a function.
+
+Here are your Lecture 11 exam checks.
+
+Can you state the CPS type transformation?
+
+Can you distinguish "uses a continuation" from genuinely being in CPS?
+
+Can you move work that occurs after a recursive call into a lambda?
+
+Can you translate SOME and NONE into success and failure continuations?
+
+And can you verify that every CPS call and every continuation call is in tail position?
+
+If yes, you have the spine of the lecture. Continuations are not mysterious return portals. They are ordinary functions used as accumulated instructions.
+

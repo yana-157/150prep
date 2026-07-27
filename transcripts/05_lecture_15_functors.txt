@@ -1,0 +1,106 @@
+15-150 Review Podcast. Episode five: Lecture 15, Functors.
+
+This lecture repeatedly redesigns a dictionary library. Each redesign fixes one weakness and leads naturally to type classes, selective transparency, and functors.
+
+A dictionary maps keys to values. A string dictionary signature can package an abstract dictionary type and operations:
+
+"type key equals string."
+
+"type beta t."
+
+"val empty colon beta t."
+
+"val insert colon key times beta to beta t to beta t."
+
+"val lookup colon key to beta t to beta option."
+
+The value type is polymorphic. The key type is fixed as string.
+
+A list implementation is simple but may require linear-time lookup. A binary-search-tree implementation can offer logarithmic lookup when the tree is balanced. Its invariant is that every key in the left subtree compares less than the root key, and every key in the right compares greater. Opaque ascription prevents users from constructing trees that violate this ordering invariant.
+
+The first attempt at general keys makes the dictionary doubly polymorphic: one type variable for keys and another for values. But insertion and lookup need to compare keys, and arbitrary SML types do not share one universal comparison operation.
+
+The second attempt passes a comparison function into every insert and lookup. This type-checks but is unsafe. A tree may be built using String dot compare and later queried using a Pig-Latin comparison. Each function individually has the correct type, but the second comparison interprets the tree under a different ordering invariant. Lookup may travel down the wrong branch and miss a key that is present.
+
+The problem is not just having a comparison function. The comparison operation and the data structure built with it must remain packaged together.
+
+Enter a type class. In this lecture's terminology, a type class is a signature describing a type and operations supported by that type. The ordering type class is:
+
+"signature O R D equals sig, type t, val compare colon t times t to order, end."
+
+A structure implementing ORD is an instance. StrOrd defines t as string and compare as String dot compare. IntOrd defines t as int and compare as Int dot compare. PigLatinOrd may also define t as string but supply a different ordering. One concrete type can have multiple meaningful instances.
+
+These instance structures use transparent ascription because clients need to know what their t actually is. Knowing that StrOrd dot t equals string is the entire point.
+
+The dictionary signature can now contain an inner structure:
+
+"structure Key colon O R D."
+
+"type beta t."
+
+"val insert colon Key dot t times beta to beta t to beta t."
+
+"val lookup colon Key dot t to beta t to beta option."
+
+The implementation uses Key dot compare internally. The comparison function is no longer supplied separately on every call, so it cannot accidentally change between insertion and lookup.
+
+There is one opacity problem. If a concrete StrDict opaquely ascribes to the generic dictionary signature, opacity hides both the dictionary representation and the fact that Key dot t equals string. We want to hide the tree representation while exposing the key type.
+
+Selective transparency solves this. The form:
+
+"SIGNATURE where type path equals concrete type"
+
+reveals one chosen type equality while leaving other abstract types hidden. For example:
+
+"POLY underscore DICT where type Key dot t equals string."
+
+The dictionary type remains abstract, but its keys are publicly known to be strings.
+
+So far, however, we would still need to rewrite the same dictionary structure for IntOrd, StrOrd, PigLatinOrd, and every future ordering. We need a module-level function.
+
+A functor maps structures to structures. Values are described by types and transformed by functions. Structures are described by signatures and transformed by functors.
+
+Basic syntax is:
+
+"functor Name, open parenthesis, Arg colon SIG, close parenthesis, equals struct ... end."
+
+The argument is a structure satisfying the required signature. Inside the functor, its types and operations are available through Arg.
+
+One example is PairOrd. It takes two ORD structures, A and B, and returns an ordering for pairs of A dot t and B dot t. Compare the first components using A dot compare. Only when they are equal, compare the second components using B dot compare.
+
+The main example is MkDict:
+
+"functor MkDict, open parenthesis, Key colon O R D, close parenthesis, colon greater-than, POLY underscore DICT where type Key dot t equals Key dot t, equals struct ... end."
+
+Inside, the dictionary is a BST containing Key dot t keys and arbitrary values. Insert and lookup consistently call Key dot compare.
+
+We can then generate structures:
+
+"structure IntDict equals MkDict of IntOrd."
+
+"structure StrDict equals MkDict of StrOrd."
+
+"structure PigLatinDict equals MkDict of PigLatinOrd."
+
+Each generated dictionary has its own fixed key ordering. Its concrete tree remains hidden, while the key type remains visible.
+
+Pause and predict. Can a value of StrDict's dictionary type be passed to PigLatinDict dot lookup merely because both key types are string?
+
+No. The structures expose different abstract dictionary types. This is good: it prevents trees built under one ordering instance from being used under another.
+
+One syntax trap: a functor technically takes one structure argument. SML provides sugar that makes it look as though a functor takes several structures, types, or values. If you define it with that sugar, call it using the corresponding sugar. The apparently multiple components are really fields of one anonymous argument structure.
+
+Your Lecture 15 checklist:
+
+The dictionary invariant depends on one consistent comparison.
+
+An ORD structure packages a type with its compare operation.
+
+A type-class signature describes capabilities; an instance structure supplies them.
+
+Selective transparency reveals a chosen type equality through an opaque boundary.
+
+A functor is a module-level function from structures to structures.
+
+And MkDict turns any ORD instance into a dictionary module whose key type is known and representation is hidden.
+

@@ -1,0 +1,79 @@
+15-150 Review Podcast. Episode seven: Lecture 17, Sequences, Work, and Span.
+
+A sequence is the course's immutable analogue of an array. It stores a fixed number of same-typed elements and supports constant-time indexing. Unlike a mutable array, changing an element produces a new sequence.
+
+The representation is abstract. You cannot pattern-match a sequence as Empty or cons. You interact with it through the Seq interface. Important constructors include empty, singleton, tabulate, and fromList. Important observations include nth and length. Transformations include map, filter, append, flatten, take, drop, and split. There are also reduce, zip, update, inject, sort, and search.
+
+Sequences trade some of lists' pleasant recursive structure for random access and parallelism. On a list, reaching index i takes linear time in i. On a sequence, nth and length each take constant work and constant span.
+
+To discuss parallel cost, separate work from span.
+
+Work is the total amount of computation performed. Think of it as the sum of all nodes in a cost graph.
+
+Span is the length of the longest dependency path from start to finish. It is the running time with unlimited processors, ignoring scheduling overhead.
+
+Sequential composition adds both work and span. Parallel composition adds work, but its span is the maximum span of the branches, plus constant fork-and-join overhead.
+
+A cost graph visually records dependencies. Its area-like total is work. Its longest source-to-sink route is span.
+
+Start with Seq dot tabulate. "Tabulate f n" creates the sequence containing f zero through f of n minus one. Every call to f is independent, so they can run in parallel. If f has constant work and span, tabulate uses linear work and constant span.
+
+Seq dot nth retrieves one indexed element and raises Range for an invalid index. Its work and span are both constant.
+
+Seq dot length is also constant work and span because the sequence stores its length.
+
+Seq dot map applies f independently to every element. One way to understand it is:
+
+"tabulate, open parenthesis, fn i arrow f of nth S i, close parenthesis, length S."
+
+For constant-time f, map has linear work and constant span. More generally, total work includes all applications of f, while span includes only the slowest application because those calls are parallel.
+
+Now compare fold and reduce. A list fold follows a fixed sequential dependency chain. The next accumulator depends on the previous one, so even a constant-time combining function gives linear span.
+
+For an associative operation, a sequence can combine neighboring pairs in parallel, then combine the pair-results, and continue as a balanced tree. Associativity means:
+
+"x operation, open parenthesis, y operation z, close parenthesis, equals, open parenthesis, x operation y, close parenthesis, operation z."
+
+Reparenthesizing does not change the result, though the original left-to-right order of elements must remain.
+
+Addition is associative. Subtraction is not. That is why a parallel tree-shaped sum works, while arbitrary subtraction cannot be freely regrouped.
+
+Seq dot reduce has type:
+
+"open parenthesis, alpha times alpha to alpha, close parenthesis, to alpha, to alpha sequence, to alpha."
+
+Its combining function must be total and associative. The second argument is the base value used for the empty sequence and combined into the result according to the library's specification.
+
+With a constant-time combining operation, reduce over n elements uses linear work and logarithmic span. The same total number of useful combinations occurs, but the dependency tree has logarithmic height.
+
+Pause and predict. What is the work and span of summing a length-n sequence with Seq dot reduce op plus zero?
+
+The work is order n. The span is order log n.
+
+Seq dot filter with a constant-time total predicate has linear work and logarithmic span. The implementation is subtler than map because output positions depend on how many earlier elements survive. A useful intuition is to mark entries as SOME or NONE in parallel and then combine surviving blocks. Do not claim constant span for filter.
+
+For a matrix represented as a sequence of m rows, each containing n entries, define row sum using reduce. Map row sum over all rows, then reduce the resulting row totals.
+
+Each row sum has order n work and log n span. The m row sums run in parallel, so together they use order m times n work but only log n span. The final reduction of m row totals adds order m work and log m span. Overall:
+
+Work is order m n.
+
+Span is order log n plus log m.
+
+This is a standard nested-cost calculation. For parallel branches, multiply or sum all their work, but take the maximum branch span. Then add the span of later sequential stages.
+
+Your Lecture 17 checklist:
+
+A sequence is an immutable, fixed-size, abstract, indexable collection.
+
+nth and length are constant work and span.
+
+tabulate and map with constant functions are linear work and constant span.
+
+filter is linear work and logarithmic span.
+
+reduce needs a total associative operation and is linear work, logarithmic span.
+
+Work counts everything. Span follows the longest dependency chain.
+
+And nested sequence costs are found by composing the inner operation's cost with the outer operation's cost graph.

@@ -1,0 +1,118 @@
+15-150 Review Podcast. Episode three: Lecture 13, Regular Expressions.
+
+This lecture connects mathematical languages, recursive datatypes, and continuations. The big payoff is an implementation of a regular-expression matcher whose continuation controls what must be true of the unconsumed suffix.
+
+Start with the vocabulary.
+
+An alphabet, usually written capital sigma, is a set of characters.
+
+A string is a finite sequence of characters from that alphabet. The empty string is written epsilon.
+
+Sigma star is the set of every finite string over sigma, including epsilon.
+
+A language is any subset of sigma star. In other words, a language is a set of strings.
+
+A validator for language L is a function from string to bool that returns true exactly for strings in L.
+
+Regular expressions recursively build particular languages using six forms.
+
+Zero matches no strings. Its language is the empty set.
+
+One matches exactly the empty string.
+
+A character c matches the one-character string c.
+
+Plus of r one and r two is alternation. It matches anything matched by either expression.
+
+Times of r one and r two is concatenation. It matches a string that can be split into a prefix from the first language and a suffix from the second.
+
+Star of r matches zero or more consecutive strings from r's language. Because zero repetitions are allowed, every star language contains epsilon.
+
+The corresponding SML datatype is:
+
+"datatype regexp equals Zero, bar One, bar Char of char, bar Plus of regexp times regexp, bar Times of regexp times regexp, bar Star of regexp."
+
+Do not confuse Zero and One. Zero matches nothing. One matches one thing: epsilon. And Star Zero still matches epsilon, because zero repetitions are always available.
+
+Pause and predict. Over the alphabet containing a and b, what language does "One plus Char a" denote?
+
+It denotes the set containing epsilon and the one-character string a.
+
+The lecture briefly relates regular expressions to finite-state automata. A finite-state automaton has a finite set of states, transitions labeled by input characters, a start state, and accepting states. The operational picture is useful, but the central implementation here works directly over the recursive regexp datatype.
+
+Now for match. Its type is:
+
+"regexp to char list to, open parenthesis, char list to bool, close parenthesis, to bool."
+
+The third argument is a continuation on the unconsumed suffix. "match r cs k" is true exactly when cs can be split as prefix appended to suffix, where the prefix belongs to L of r and k returns true on the suffix.
+
+This specification is stronger and more useful than merely asking whether r matches the whole input. The continuation can impose any future condition. If k is List dot null, the suffix must be empty, so r must consume the entire input. If k checks that the suffix length is three, match searches for an r-prefix leaving exactly three characters.
+
+The continuation is what lets concatenation and repetition compose.
+
+Walk through every constructor.
+
+For Zero, return false. There is no matching prefix.
+
+For One, call k on the unchanged character list. One consumes epsilon, so the entire input remains as the suffix.
+
+For Char c, inspect the input. An empty input fails. On c prime cons cs prime, require that c equals c prime and then call k on cs prime. The character consumes exactly one matching symbol.
+
+For Plus of r one and r two, try both alternatives with the same input and continuation:
+
+"match r one cs k, orelse, match r two cs k."
+
+For Times of r one and r two, first let r one choose how much prefix to consume. Its continuation receives the remaining suffix, and then matches r two on that suffix:
+
+"match r one cs, open parenthesis, fn cs prime arrow match r two cs prime k, close parenthesis."
+
+This one line is the heart of the lecture. The continuation links the end of the first regex to the beginning of the second.
+
+For Star r, there are two broad possibilities. Zero repetitions means call k on the unchanged input. One or more repetitions means match r once, then recursively match Star r on what remains:
+
+"k cs, orelse, match r cs, open parenthesis, fn cs prime arrow match Star r cs prime k, close parenthesis."
+
+But this naive version may loop. If r can match epsilon, the first match may return the exact same suffix cs. Recursive Star then receives unchanged arguments and can repeat forever. Star One is the simplest example.
+
+The strengthened implementation requires progress:
+
+"k cs, orelse, match r cs, open parenthesis, fn cs prime arrow cs prime not equal cs, andalso, match Star r cs prime k, close parenthesis."
+
+The inequality check prevents recursive repetition unless at least one character was consumed. Short-circuiting andalso matters: if the suffix did not change, the recursive call is never evaluated.
+
+This matcher performs backtracking search. Plus explores alternatives. Times asks the first expression to offer possible suffixes to the second. Star repeatedly offers progressively shorter suffixes. Continuations are being "weaponized" to express the condition that each candidate suffix must satisfy.
+
+Finally, whole-string acceptance is concise:
+
+"fun accept r s equals match r, open parenthesis, String dot explode s, close parenthesis, List dot null."
+
+List dot null is the final continuation because successful acceptance must leave no characters.
+
+Here are a few mental examples.
+
+Times of Char a and Char b accepts "ab," but not "a" and not "abc."
+
+Star of Char a accepts the empty string, "a," "aa," and so on.
+
+Plus of Times a b and Times b a accepts exactly "ab" or "ba."
+
+If you want strings ending in b over the alphabet a and b, use Times of Star of Plus a b, with b.
+
+The exam traps are structural.
+
+Zero versus One.
+
+Alternation versus concatenation.
+
+Remembering that star includes zero copies.
+
+Understanding that match may consume only a prefix.
+
+Understanding that k decides whether the suffix is acceptable.
+
+For Times, nest the second match inside the first match's continuation.
+
+For Star, try zero copies first and enforce progress before recurring.
+
+If those rules feel automatic, you can reconstruct the implementation rather than memorize it.
+

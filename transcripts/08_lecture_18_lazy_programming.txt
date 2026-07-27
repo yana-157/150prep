@@ -1,0 +1,112 @@
+15-150 Review Podcast. Episode eight: Lecture 18, Lazy Programming and Streams.
+
+SML is eager. Before a function body runs, its arguments are evaluated to values. That is why "fst of one and one div zero" raises Div even though fst uses only the first component.
+
+Lazy evaluation delays an expression until its value is needed. In a fully lazy language, variables may be bound to unevaluated expressions. This can avoid unnecessary work, but it also makes timing, exceptions, and performance harder to predict.
+
+SML remains eager, but functions let us opt into laziness. A thunk, also called a suspension, has type unit to t. To delay expression e, write "fn unit arrow e." Creating the lambda is immediate; e runs only when the function is applied to unit.
+
+The essential fact is: lambda bodies are frozen until invocation.
+
+The lecture packages thunks in a module:
+
+"type alpha t."
+
+"val lazy colon, open parenthesis, unit to alpha, close parenthesis, to alpha t."
+
+"val force colon alpha t to alpha."
+
+Internally, the abstract type may simply be unit to alpha. Lazy wraps a thunk, and force calls it. Keeping the type abstract separates "a suspended computation that may produce alpha" from "an alpha value already in hand."
+
+Real lazy libraries often memoize. The first force computes the result and stores it; later forces reuse the stored result. The simple lecture implementation does not memoize, so repeated forcing may repeat the computation.
+
+Laziness enables infinite data structures because only a finite prefix needs to exist at any moment.
+
+A first attempt is a lazy list:
+
+"datatype alpha llist equals Nil, bar Cons of alpha times, open parenthesis, unit to alpha llist, close parenthesis."
+
+Its tail is delayed. Natural numbers can be:
+
+"fun natsFrom n equals Cons of n and fn unit arrow natsFrom of n plus one."
+
+The recursive call sits inside a thunk, so constructing the first Cons does not recurse forever. There is no base case because the conceptual list is infinite.
+
+But this datatype is not maximally lazy. The head value is eager. If lazyTabulate constructs "Cons of f i and delayed rest," then f zero runs immediately. Tabulating "1024 div i" from zero raises Div at construction time, even before anyone requests an element.
+
+A maximally lazy data structure computes no element until it is explicitly demanded. Streams achieve this by delaying the entire next front.
+
+The conceptual types are mutually recursive:
+
+"datatype alpha stream equals Stream of, open parenthesis, unit to alpha front, close parenthesis."
+
+"and alpha front equals Empty, bar Cons of alpha times alpha stream."
+
+A stream is a delayed front. A front is an exposed stream.
+
+The public STREAM signature hides the stream representation but exposes the front datatype, along with:
+
+"delay colon, open parenthesis, unit to alpha front, close parenthesis, to alpha stream."
+
+"expose colon alpha stream to alpha front."
+
+Delay suspends work. Expose explicitly requests one layer and may produce Empty, Cons, raise an exception, loop, or take a long time.
+
+Natural numbers as a stream can be:
+
+"fun nats i equals delay of fn unit arrow Cons of i and nats of i plus one."
+
+Even computing the first element is delayed until expose.
+
+Pause and predict. What is the difference between calling nats zero and exposing nats zero?
+
+Calling nats zero immediately returns a stream, a suspended computation. Exposing it runs the thunk and returns the front Cons of zero and the stream beginning at one.
+
+Functions on streams usually come in pairs: one function consumes and produces streams, and a helper consumes and produces fronts.
+
+Map is:
+
+"fun map f S equals delay of fn unit arrow map-prime f of expose S."
+
+"map-prime f Empty equals Empty."
+
+"map-prime f of Cons x S equals Cons of f x and map f S."
+
+The expose is safely behind delay. Calling map does not expose the input or apply f. Exposing the mapped output grants permission to expose one layer of the input.
+
+A tempting implementation that cases on "expose S" before returning delay is not maximally lazy. Merely calling map would force the input. General rule: work on a stream should be locked behind delay.
+
+Append follows the same paired pattern. The stream-level function delays a call that exposes the first stream. If the first front is Empty, the front-level helper exposes the second stream because it must return a front. If it sees Cons, it preserves the head and recursively appends the tail.
+
+Productivity describes whether exposing keeps making finite progress. A productive stream is one whose expose always terminates with Empty or Cons of a value and another productive stream.
+
+Map with a total function preserves productivity. Append requires productive inputs. Filter is more subtle:
+
+If the next element satisfies the predicate, return it.
+
+If not, expose the filtered remainder to keep searching for the next surviving element.
+
+Even when the input stream is productive and the predicate is total, the output may not be productive. Filtering an infinite stream with a predicate that is never true causes expose to search forever.
+
+This is not necessarily an implementation bug. The requested next output element may not exist, and determining that can require infinite search.
+
+The Sieve of Eratosthenes is a final stream example. Begin with the stream of integers from two. Expose the next number x, emit x as prime, and recursively sieve the remainder after filtering out numbers divisible by x. Laziness lets this describe an infinite sequence of primes while computing only the demanded prefix.
+
+Your Lecture 18 checklist:
+
+Eager SML evaluates arguments before function bodies.
+
+A thunk is unit to t and delays its body.
+
+Lazy values may be memoized, though the simple implementation is not.
+
+A lazy list delays its tail but not its head.
+
+A stream delays the whole front and is maximally lazy.
+
+Delay suspends; expose demands.
+
+Stream transformations keep exposure behind delay.
+
+And productivity asks whether each requested next front arrives in finite time.
+

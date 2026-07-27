@@ -1,0 +1,86 @@
+15-150 Review Podcast. Episode six: Lecture 16, Red-Black Trees.
+
+An ordinary binary search tree can become a long spine. If keys are inserted in sorted order, lookup and insertion may take linear time rather than logarithmic time. A red-black tree uses color invariants and local rotations to remain approximately balanced.
+
+The datatype has Empty, Red of left subtree, entry, and right subtree, and Black of the same three components. Entries are key-value pairs.
+
+There are three invariants.
+
+First, it is a binary search tree. An inorder traversal of the keys is sorted according to Key dot compare.
+
+Second, every child of a red node must be black. Equivalently, no path contains two adjacent red nodes.
+
+Third, every path from the root to an Empty leaf contains the same number of black nodes. This common count is the black height.
+
+These rules do not make every path exactly the same length. But because red nodes cannot be adjacent, a path contains at most about as many red nodes as black nodes. The longest root-to-leaf path is therefore at most about twice the shortest. This is enough to guarantee logarithmic height, and thus logarithmic lookup and insertion.
+
+Lookup ignores color and follows ordinary BST logic: compare the target key to the node key, return SOME value when equal, recurse left on LESS, and recurse right on GREATER.
+
+Insertion is harder because it must preserve both ordering and color invariants.
+
+When inserting at Empty, create a red node. Making it black would add one black node to only that path and immediately violate equal black height. Making it red preserves black height for free.
+
+But a red insertion may create a red-red violation when its parent is red. The repair strategy rotates and recolors a three-node configuration.
+
+There are four geometric cases: left-left, left-right, right-left, and right-right. In all four cases, name the three ordered entries x, y, and z. Rebuild the local subtree with y as a red root, x as its black left child, and z as its black right child. Preserve the four surrounding subtrees in inorder order.
+
+This transformation preserves the BST ordering because the entries remain x, then y, then z in inorder. It preserves black height because every path through the repaired region still encounters one newly black child. It removes the local red-red violation because the red y has black children.
+
+The repair may create a new red-red violation one level higher if this newly red root sits below a red parent. That is why repairs occur while recursion unwinds, pushing the possible violation upward.
+
+The lecture formalizes this temporary state as an almost red-black tree. An almost red-black tree satisfies the normal invariants except that its root and one root child may both be red. The violation is allowed once and only at the top of that subtree.
+
+Two helpers repair the two directions.
+
+restoreLeft handles a black node whose left child contains a left-left or left-right red-red pattern.
+
+restoreRight handles the mirror-image right-left or right-right patterns.
+
+On either matching violation, the helper returns the same canonical shape: red y over black x and black z. On any other input, the helper acts as the identity.
+
+Pause and predict. Why do restore functions pattern-match only when the outer node is black?
+
+Because their specification repairs a black parent containing one almost-red-black child. If the parent itself is red, performing the local recoloring could move the violation in a way outside that helper's promised shape. The insertion algorithm lets a red subtree remain almost red-black so its black parent can repair it, or the outer wrapper can handle the true root.
+
+Insertion uses two functions.
+
+The inner recursive function, often named ins, inserts the entry. At Empty it returns a red singleton. At a black node, it recurses in the comparison-selected direction and immediately applies restoreLeft or restoreRight. At a red node, it recurses without restoration; its result is allowed to be almost red-black for the caller to handle. On EQUAL, it replaces the value while preserving the node's color.
+
+The outer insert function calls ins once. If the result has a red root, it recolors that root black. Otherwise it leaves the result unchanged.
+
+Why can the root always become black? It has no parent, so recoloring it cannot create a red-red problem. It adds one black node to every root-to-leaf path equally, so equal black height remains true.
+
+This outer wrapper is important. Recoloring every red subtree root black during recursion would alter black heights locally and break the algorithm. Recolor only the actual root after all recursive repair is complete.
+
+The module system from Lectures 14 and 15 matters here. The red-black-tree datatype, restore functions, and ins helper should remain hidden. The public dictionary signature exposes empty, insert, and lookup. Opaque ascription prevents a client from directly constructing an invalid red-black tree. The MkDict functor supplies a consistent Key ordering.
+
+Here is a compact insertion trace to keep in your head.
+
+Search down exactly as in a BST.
+
+Insert a red leaf.
+
+As recursion returns through black parents, rotate and recolor any local red-red pattern.
+
+Allow a possible red-red issue to move upward.
+
+At the true root, paint red to black.
+
+Your Lecture 16 checklist:
+
+State all three invariants.
+
+Explain why those invariants imply logarithmic height.
+
+Explain why a new leaf is red.
+
+Recognize the four red-red shapes.
+
+Know that every repair produces red y with black x and z.
+
+Understand the difference between an RBT and an almost RBT.
+
+Know why restoration happens while returning through black nodes.
+
+And know why blackening the final root is always safe.
+

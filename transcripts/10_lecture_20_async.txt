@@ -1,0 +1,112 @@
+15-150 Review Podcast. Episode ten: Lecture 20, Asynchronous Programming.
+
+The motivating problem is an interactive REPL. A command such as ping three waits three seconds before printing pong. If the program simply calls a blocking wait, the entire REPL freezes and cannot accept more input.
+
+The logical problem is not that the computer is incapable of doing other work. The program's control flow says: do not continue until this operation returns.
+
+The first solution rediscovers CPS. Replace blocking wait with:
+
+"waitThen colon int to, open parenthesis, unit to unit, close parenthesis, to unit."
+
+waitThen registers a continuation to run after the timer finishes and returns immediately. Similarly, inputLineThen registers a continuation to run when input arrives.
+
+The essential rule is: after a registration, the only later is inside the callback.
+
+Code written after waitThen runs immediately after registration, not after the wait. Therefore any step that requires the future result must be placed inside the registered continuation.
+
+An event loop owns the master schedule. It tracks pending outside events, such as timers and input, and ready jobs. When no job is ready, it sleeps until input arrives or the next timer deadline. When something becomes ready, the corresponding continuation is queued and run.
+
+The model is single-threaded and run-to-completion. One callback runs without being interrupted by another callback. Concurrency comes from interleaving separate completed callback runs over time, not from two pieces of SML executing simultaneously.
+
+Raw callbacks work, but nested dependencies create callback hell: one indentation level per continuation. They also force the caller to prescribe an order even when independent operations could run together.
+
+A promise is a typed value representing the eventual result of an asynchronous operation. An asynchronous version of a direct function from alpha to beta instead has type alpha to beta Promise dot t.
+
+The promise signature includes:
+
+"new colon unit to alpha promise."
+
+"resolve colon alpha promise times alpha to unit."
+
+"upon colon alpha promise times, open parenthesis, alpha to unit, close parenthesis, to unit."
+
+"thenDo colon alpha promise times, open parenthesis, alpha to beta promise, close parenthesis, to beta promise."
+
+"both colon alpha promise times beta promise to, open parenthesis, alpha times beta, close parenthesis, promise."
+
+Upon registers an observer to run when a promise has a value. thenDo chains an asynchronous step and returns a new promise for its eventual result. Both combines two promises and resolves only when both original results exist.
+
+Both expresses parallel independence. If two web pages may be fetched independently, start both fetches and combine them with both. The result does not depend on which finishes first. By contrast, two reads from one keyboard intentionally remain sequential.
+
+Pause and predict. If a promise is already resolved when upon is called, should its callback run immediately before upon returns?
+
+No. It should still be deferred. The lecture's desired callback discipline is exactly once and always later. Running now on a cache hit but later on a cache miss makes ordering depend on hidden state.
+
+Raw callbacks commonly suffer four bugs.
+
+Dropped continuation: some branch never calls it, so the workflow silently waits forever.
+
+Double call: some path invokes it twice, duplicating everything downstream.
+
+Sometimes now, sometimes later: timing depends on internal state.
+
+Premature after: code after registration runs before the result exists.
+
+Promises encode protections against these errors.
+
+One implementation uses:
+
+"datatype alpha state equals Pending of, open parenthesis, alpha to unit, close parenthesis, list, bar Resolved of alpha."
+
+"type alpha promise equals alpha state ref."
+
+A pending promise stores a wait queue of continuations. A resolved promise stores its permanent value. The event loop separately owns a run queue of unit-to-unit jobs that are ready.
+
+Upon examines the promise. If pending, add the continuation to its wait queue. If already resolved, do not call the continuation immediately; put a thunk calling it onto the run queue.
+
+Resolve examines the promise. Resolving an already resolved promise raises an error, preventing double resolution. Resolving a pending promise first changes its state to Resolved v, then promotes every waiting continuation into the run queue.
+
+This gives two kinds of queues.
+
+The run queue contains jobs ready to execute.
+
+Each pending promise has a wait queue containing continuations that cannot run until its value arrives.
+
+Resolving moves jobs from a wait queue to the run queue.
+
+The underlying nonblocking primitives can be wrapped. Sleep creates a new promise, asks waitThen to resolve it with unit later, and immediately returns the promise. Read-line creates a promise, asks inputLineThen to resolve it with the future string, and returns immediately.
+
+Promises do not replace the event loop. They organize callbacks above it. The event loop still knows how to wait for real-world events; promises provide a uniform compositional interface for future values.
+
+The lecture connects this directly to modern TypeScript and JavaScript.
+
+JavaScript Promise of A corresponds to A Promise dot t.
+
+p dot then of f corresponds to thenDo.
+
+Promise dot all corresponds to both, generalized to collections.
+
+Await is compiled into a continuation or promise chain.
+
+An async function from A to B really returns something like A to Promise of B.
+
+This model has limitations. A computation-heavy callback still freezes a single-threaded event loop until it finishes. Real promise systems also need rejection or error channels, cancellation, and separation between read-only promises and the authority to resolve them.
+
+Your Lecture 20 checklist:
+
+Blocking means the current control flow cannot proceed.
+
+Callback registration returns now; required later work belongs inside the callback.
+
+The event loop interleaves run-to-completion jobs.
+
+A promise represents one future typed value.
+
+upon observes, resolve fulfills, thenDo chains, and both combines independent work.
+
+Pending promises store waiters; resolved promises store values.
+
+Resolve promotes waiters to the run queue.
+
+And a good promise discipline guarantees exactly once and always later.
+

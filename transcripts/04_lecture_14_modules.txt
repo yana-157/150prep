@@ -1,0 +1,72 @@
+15-150 Review Podcast. Episode four: Lecture 14, Structures and Signatures.
+
+Modules solve a software-engineering problem: code must be organized, documented, protected, and used by people who should not need to know every implementation detail.
+
+A namespace is a group of names kept separate from other groups. You have already used namespaces in names such as List dot length and Int dot compare. The same short name may exist in several namespaces without collision.
+
+In SML, a structure is a named module containing declarations. It can contain values, functions, datatypes, types, exceptions, and even other structures. For example, a structure Foo may define a datatype t, a constructor Bar, a value x, and an exception E. Outside it, those names are accessed as Foo dot Bar, Foo dot x, and Foo dot E.
+
+A structure is more powerful than a tuple or record because a module can package types and exceptions as well as values.
+
+A signature is an interface. It is a collection of specifications saying what a structure exposes. A signature named SORT might contain:
+
+"val sort colon, open parenthesis, alpha times alpha to order, close parenthesis, to alpha list to alpha list."
+
+By convention, signature names are capitalized.
+
+Ascription means declaring that a structure implements a signature. The syntax uses a colon:
+
+"structure MergeSort colon SORT equals struct ... end."
+
+Ascription does two jobs. First, the compiler verifies that every required declaration exists with a compatible type. Second, users can see only declarations listed in the signature. Internal helpers such as split and merge may still exist, but cannot be called from outside.
+
+This creates an abstraction boundary. The signature is what a user needs to know. The structure body is what a maintainer needs to know.
+
+Signatures may include an abstract type. Consider an integer-set signature with:
+
+"type t."
+
+"val empty colon t."
+
+"val insert colon int to t to t."
+
+"val remove colon int to t to t."
+
+"val mem colon int to t to bool."
+
+The signature does not say whether t is a list, tree, bit vector, or anything else. A structure may privately define "type t equals int list."
+
+Now distinguish two kinds of ascription.
+
+Transparent ascription uses a single colon. It restricts visible declarations, but type equalities discovered from the implementation may remain visible. If the implementation says t equals int list, outside code may still know that the module's t is int list.
+
+Opaque ascription uses colon greater-than. It hides the representation of abstract types. Outside code treats IntSet dot t as a new unknown type, even if the implementation uses int list internally.
+
+Why choose opacity? Invariants.
+
+Suppose the set implementation maintains a list with no duplicates. If outside code knows that the set type is merely int list, it can manufacture an invalid set such as one cons one cons empty. If the type is opaque, the only way to obtain values of the set type is through the module's operations. If empty, insert, and remove preserve the invariant, users cannot violate it.
+
+Pause and predict. Under opaque ascription, can a caller write a literal integer list and annotate it as IntSet dot t?
+
+No. The compiler does not expose the equality between IntSet dot t and int list.
+
+Opacity also enables representation independence. Code using only the interface should behave the same whether sets are implemented as lists or trees. The user reasons about the mathematical set, not the concrete arrangement of nodes or list elements.
+
+Different concrete values may represent the same abstract object. The lists one cons two and two cons one are different list values, but they can represent the same set. Think of concrete values as grouped into representation-equivalence classes. All values in one class represent the same abstract set and must be indistinguishable through the public operations.
+
+To compare two different implementations, such as a list set and a tree set, define a relation connecting representations of the same mathematical set. Show that their empty values are related, that corresponding operations preserve the relation, and that observations such as mem agree on related inputs. Then no client restricted to the signature can distinguish the implementations.
+
+Your Lecture 14 checklist:
+
+A structure is an implementation namespace containing declarations.
+
+A signature is an interface containing specifications.
+
+Ascription checks the implementation and limits its visible surface.
+
+Transparent ascription may reveal abstract-type equalities.
+
+Opaque ascription hides them and protects invariants.
+
+And representation independence means client behavior depends on the abstract interface, not the chosen concrete representation.
+

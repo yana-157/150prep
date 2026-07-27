@@ -1,0 +1,74 @@
+15-150 Review Podcast. Episode two: Lecture 12, Exceptions.
+
+An SML expression can evaluate to a value, loop forever, or raise an exception. Exceptions let evaluation escape without producing the value its surrounding expression expected. That escape is useful, but it also makes control flow less local and less mathematically predictable.
+
+Begin with four standard exception names.
+
+Div is raised by invalid integer division, such as one div zero.
+
+Match is raised when a case expression or function pattern has no matching branch.
+
+Bind is raised when a val binding's pattern does not match the value being bound.
+
+Fail is not itself an exception value. Fail has type string to exn, so "Fail quote bad quote" is the exception value.
+
+This Match-versus-Bind distinction is a favorite trace question. If "val x cons xs equals empty list" is evaluated, the failed val pattern raises Bind. If "case empty list of x cons xs arrow x" is evaluated, the failed case raises Match. A nonexhaustive function behaves like a nonexhaustive case and also raises Match.
+
+All exception values have type exn. The syntax "raise e" is legal when e has type exn. Raise is a language construct, not an ordinary function, so expressions such as "List dot map raise" are not valid.
+
+What type does a raise expression have? Any type. A raise never returns a value, so it can appear wherever any result type is expected. "If condition then 3 else raise Fail quote bad quote" has type int. "Raise Div" can have type string, bool, tree, or any other type required by context. This is polymorphism caused by never returning, not by producing a magical value of every type.
+
+The handle construct catches exceptions:
+
+"expression handle pattern one arrow handler one, bar pattern two arrow handler two."
+
+The protected expression and every handler body must have the same type. The handler patterns have type exn. Evaluation first tries the protected expression. If it returns a value, that value is the result and no handler runs. If it raises an exception, SML chooses the first matching handler pattern. If nothing matches, the same exception keeps propagating outward.
+
+Be careful with one common typo in intuition: "2 handle Div arrow 3" evaluates to 2, not 3. No exception was raised, so the handler is ignored.
+
+Exceptions propagate through ordinary expressions. In "one plus, open parenthesis, three times four div zero, close parenthesis, handle Div arrow five," the division raises Div. Multiplication cannot continue, then addition cannot continue, and the exception travels outward until the handle catches it. The additions and multiplications that were skipped never produce values.
+
+Handlers have lexical scope. A handler inside a function body does not catch an exception raised while evaluating the function's argument, because eager SML evaluates the argument before entering the body. If f has a Div handler internally, the expression "f of one div zero" still raises Div before f begins.
+
+Pause and predict. What happens to:
+
+"open parenthesis, raise Div, close parenthesis, handle Bind arrow one, bar Div arrow two"?
+
+It evaluates to two. The first matching handler for Div is selected.
+
+SML lets us extend the exn type. A declaration such as "exception Fact" adds a new nullary constructor Fact of type exn. "Exception Error of string" adds Error of type string to exn. The exn type is special because it is extensible: new constructors can be declared after the type already exists.
+
+Custom exceptions are better than borrowing an unrelated exception. A negative factorial should not raise Bind, because no binding failed. It might declare and raise Fact. An operation with an explanatory message might raise Error of string, and a handler can pattern-match with "Error s arrow ..." to recover the message.
+
+Exceptions and options often express related specifications. A function returning "t option" places possible failure in its type. The caller must acknowledge SOME or NONE. A function returning t but raising an exception hides failure from the return type. The latter may produce cleaner code when failure is genuinely exceptional, but it is easier to misuse.
+
+Given a possibly exception-raising function f, we can wrap it as an option:
+
+"fun f option x equals, open parenthesis, SOME of f x, close parenthesis, handle the intended exception arrow NONE."
+
+The SOME is necessary because both the protected expression and handler must share one type, here t option. Catching with an underscore pattern is usually too broad: it can swallow bugs you did not intend to handle.
+
+Exceptions are a side effect. Without side effects, independent valuable computations can often be reordered safely. With exceptions, order changes observable behavior. "Raise Div plus raise Bind" raises Div under left-to-right evaluation, while reversing the operands raises Bind. So commutativity of integer values does not imply arbitrary integer expressions may be swapped. Totality and valuability matter.
+
+The lecture finishes with exception-handling style, or EHS. Think back to tree search. In CPS, failure calls a failure continuation. In EHS, failure raises a NotFound exception. To search left and then right, evaluate the left search under "handle NotFound arrow search right." Success simply returns the found value.
+
+EHS and two-continuation CPS can encode similar branching behavior. The difference is visibility. CPS makes success and failure explicit function arguments. EHS makes failure jump nonlocally to a handler. Exceptions are therefore useful for genuine errors and early escape, but usually a poor choice for ordinary business logic.
+
+Your Lecture 12 checklist:
+
+Match means a failed case or function match. Bind means a failed val pattern.
+
+Fail needs a string argument.
+
+Raise has any context-required type but never evaluates to a value.
+
+A handle catches only exceptions raised while evaluating its protected expression.
+
+All handler bodies and the protected expression have one common type.
+
+The first matching exception pattern wins.
+
+Custom exception declarations extend exn.
+
+And exceptions make evaluation order observable.
+
