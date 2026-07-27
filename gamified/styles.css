@@ -695,6 +695,13 @@ code {
 }
 
 .answer-option input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
   accent-color: var(--blue);
 }
 
@@ -1124,7 +1131,7 @@ dialog::backdrop {
   cursor: pointer;
 }
 
-label {
+.dialog-shell label {
   display: grid;
   gap: 6px;
   margin-bottom: 14px;
@@ -1132,7 +1139,7 @@ label {
   font-weight: 720;
 }
 
-input {
+.dialog-shell input {
   width: 100%;
   min-height: 42px;
   border: 1px solid var(--line-strong);
@@ -1141,7 +1148,7 @@ input {
   background: white;
 }
 
-input:focus {
+.dialog-shell input:focus {
   border-color: var(--blue);
   outline: 3px solid rgba(43, 95, 158, 0.14);
 }
