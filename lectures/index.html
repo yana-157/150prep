@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>15-150 Lectures 11-20 Review</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #171717;
+      --muted: #636363;
+      --line: #d8d8d8;
+      --surface: #ffffff;
+      --accent: #b31b34;
+      --accent-dark: #851326;
+      --page: #f4f4f2;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    header {
+      border-top: 8px solid var(--accent);
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .header-inner,
+    main {
+      width: min(860px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .header-inner {
+      padding: 28px 0 24px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 5vw, 42px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .home-link {
+      display: inline-block;
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .home-link:hover {
+      text-decoration: underline;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    button {
+      min-height: 42px;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      padding: 0 16px;
+      background: var(--accent);
+      color: white;
+      font: inherit;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: var(--accent-dark);
+    }
+
+    button.secondary {
+      background: transparent;
+      color: var(--accent);
+    }
+
+    button.secondary:hover {
+      background: #fff0f2;
+    }
+
+    main {
+      padding: 22px 0 48px;
+    }
+
+    .episode {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr) 56px;
+      gap: 14px;
+      align-items: start;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .episode-number {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--ink);
+      color: white;
+      font-weight: 700;
+    }
+
+    .episode h2 {
+      margin: 0 0 10px;
+      font-size: 19px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .duration {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    audio {
+      display: block;
+      width: 100%;
+      height: 42px;
+    }
+
+    .status {
+      min-height: 24px;
+      margin-top: 12px;
+      color: var(--accent-dark);
+      font-weight: 600;
+    }
+
+    @media (max-width: 600px) {
+      .episode {
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 10px;
+      }
+
+      .duration {
+        display: none;
+      }
+
+      .episode-number {
+        width: 36px;
+        height: 36px;
+      }
+
+      .toolbar {
+        width: 100%;
+      }
+
+      button {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <a class="home-link" href="../">&larr; 150prep</a>
+      <h1>15-150 Lectures 11-20</h1>
+      <p class="subtitle">Ten review episodes, 68 minutes total</p>
+      <div class="toolbar">
+        <button id="play-all" type="button">Play all</button>
+        <button id="stop" class="secondary" type="button">Stop</button>
+      </div>
+      <div id="status" class="status" aria-live="polite"></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="episode">
+      <div class="episode-number">11</div>
+      <div>
+        <h2>Continuation-Passing Style</h2>
+        <audio controls preload="metadata" src="audio/01_lecture_11_cps.mp3"></audio>
+      </div>
+      <div class="duration">7:21</div>
+    </section>
+
+    <section class="episode">
+      <div class="episode-number">12</div>
+      <div>
+        <h2>Exceptions</h2>
+        <audio controls preload="metadata" src="audio/02_lecture_12_exceptions.mp3"></audio>
+      </div>
+      <div class="duration">7:20</div>
+    </section>
+
+    <section class="episode">
+      <div class="episode-number">13</div>
+      <div>
+        <h2>Regular Expressions</h2>
+        <audio controls preload="metadata" src="audio/03_lecture_13_regex.mp3"></audio>
+      </div>
+      <div class="duration">7:33</div>
+    </section>
+
+    <section class="episode">
+      <div class="episode-number">14</div>
+      <div>
+        <h2>Structures and Signatures</h2>
+        <audio controls preload="metadata" src="audio/04_lecture_14_modules.mp3"></audio>
+      </div>
+      <div class="duration">5:30</div>
+    </section>
+
+    <section class="episode">
+      <div class="episode-number">15</div>
+      <div>
+        <h2>Functors</h2>
+        <audio controls preload="metadata" src="audio/05_lecture_15_functors.mp3"></audio>
+      </div>
+      <div class="duration">7:10</div>
+    </section>
+
+    <section class="episode">
+      <div class="episode-number">16</div>
+      <div>
+        <h2>Red-Black Trees</h2>
+        <audio controls preload="metadata" src="audio/06_lecture_16_red_black_trees.mp3"></audio>
+      </div>
+      <div class="duration">6:35</div>
+    </section>
+
+    <section class="episode">
+      <div class="episode-number">17</div>
+      <div>
+        <h2>Sequences, Work, and Span</h2>
+        <audio controls preload="metadata" src="audio/07_lecture_17_sequences.mp3"></audio>
+      </div>
+      <div class="duration">6:25</div>
+    </section>
+
+    <section class="episode">
+      <div class="episode-number">18</div>
+      <div>
+        <h2>Lazy Programming and Streams</h2>
+        <audio controls preload="metadata" src="audio/08_lecture_18_lazy_programming.mp3"></audio>
+      </div>
+      <div class="duration">7:18</div>
+    </section>
+
+    <section class="episode">
+      <div class="episode-number">19</div>
+      <div>
+        <h2>Imperative Programming and References</h2>
+        <audio controls preload="metadata" src="audio/09_lecture_19_imperative_programming.mp3"></audio>
+      </div>
+      <div class="duration">6:03</div>
+    </section>
+
+    <section class="episode">
+      <div class="episode-number">20</div>
+      <div>
+        <h2>Asynchronous Programming</h2>
+        <audio controls preload="metadata" src="audio/10_lecture_20_async.mp3"></audio>
+      </div>
+      <div class="duration">7:23</div>
+    </section>
+  </main>
+
+  <script>
+    const players = Array.from(document.querySelectorAll("audio"));
+    const status = document.querySelector("#status");
+    let playAll = false;
+
+    function pauseOthers(active) {
+      players.forEach((player) => {
+        if (player !== active) player.pause();
+      });
+    }
+
+    players.forEach((player, index) => {
+      player.addEventListener("play", () => {
+        pauseOthers(player);
+        const title = player.closest(".episode").querySelector("h2").textContent;
+        status.textContent = `Playing Lecture ${index + 11}: ${title}`;
+      });
+
+      player.addEventListener("ended", () => {
+        if (playAll && players[index + 1]) {
+          players[index + 1].play();
+        } else {
+          playAll = false;
+          status.textContent = "Finished.";
+        }
+      });
+    });
+
+    document.querySelector("#play-all").addEventListener("click", () => {
+      playAll = true;
+      const current = players.find((player) => !player.paused && !player.ended);
+      (current || players[0]).play();
+    });
+
+    document.querySelector("#stop").addEventListener("click", () => {
+      playAll = false;
+      players.forEach((player) => player.pause());
+      status.textContent = "Stopped.";
+    });
+  </script>
+</body>
+</html>
