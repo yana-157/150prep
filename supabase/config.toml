@@ -1,0 +1,4 @@
+project_id = "150prep"
+
+[functions.grade-answer]
+verify_jwt = true

@@ -1,24 +1,27 @@
-# 15-150 Lecture Review Podcasts
+# 150prep
 
-A browser-based review series for CMU 15-150 Lectures 11-20.
+A study companion for CMU 15-150, Principles of Functional Programming.
 
-The ten episodes cover:
+## Live sections
 
-1. Continuation-Passing Style
-2. Exceptions
-3. Regular Expressions
-4. Structures and Signatures
-5. Functors
-6. Red-Black Trees
-7. Sequences, Work, and Span
-8. Lazy Programming and Streams
-9. Imperative Programming and References
-10. Asynchronous Programming
+- `gamified/`: 15 topic modules spanning Lectures 1-20
+- `lectures/`: the playable review podcast series for Lectures 11-20
 
-Total runtime: 68:41.
+The gamified review includes 60 lesson panels, 30 knowledge checks, 30 original
+homework-shaped practice prompts, local progress, XP, badges, account UI, a
+leaderboard view, and a secure AI-grading integration.
 
-The site supports individual playback and continuous playback in lecture order.
-Readable episode transcripts are included in `transcripts/`.
+## Community backend
 
-The episodes are narrated with the `en-US-AvaNeural` voice at a slightly reduced
-speaking rate for technical material.
+The site works without a backend in solo mode. Shared accounts, public progress,
+and AI grading use Supabase Auth, Postgres Row Level Security, and a Supabase
+Edge Function.
+
+1. Create a Supabase project.
+2. Run `supabase/schema.sql` in its SQL editor.
+3. Deploy `supabase/functions/grade-answer`.
+4. Store `OPENAI_API_KEY` as an Edge Function secret.
+5. Add the project URL and publishable key to `gamified/config.js`.
+
+The OpenAI key belongs only in the Edge Function secret store. Never put it in
+`gamified/config.js` or another browser-delivered file.

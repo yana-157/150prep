@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#a6192e">
+  <meta name="description" content="A structured, gamified review companion for CMU 15-150.">
+  <title>150prep</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <a class="brand" href="#dashboard" data-route="dashboard" aria-label="150prep dashboard">
+        <span class="brand-mark" aria-hidden="true">λ</span>
+        <span>150prep</span>
+      </a>
+
+      <div class="side-progress" aria-label="Course progress">
+        <div class="side-progress-row">
+          <span>Course progress</span>
+          <strong id="sidebar-percent">0%</strong>
+        </div>
+        <div class="progress-track"><span id="sidebar-progress"></span></div>
+        <span id="sidebar-xp">0 XP earned</span>
+      </div>
+
+      <nav class="nav-list">
+        <button class="nav-item is-active" type="button" data-route="dashboard">
+          <i data-lucide="layout-dashboard"></i><span>Learn</span>
+        </button>
+        <button class="nav-item" type="button" data-route="practice">
+          <i data-lucide="code-2"></i><span>Practice</span>
+        </button>
+        <a class="nav-item" href="../lectures/">
+          <i data-lucide="headphones"></i><span>Podcasts</span>
+        </a>
+        <button class="nav-item" type="button" data-route="leaderboard">
+          <i data-lucide="trophy"></i><span>Leaderboard</span>
+        </button>
+        <button class="nav-item" type="button" data-route="profile">
+          <i data-lucide="circle-user-round"></i><span>Profile</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="status-dot" id="backend-dot"></span>
+        <span id="backend-label">Solo mode</span>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" id="page-eyebrow">15-150 Summer 2026</p>
+          <h1 id="page-title">Your learning path</h1>
+        </div>
+        <div class="topbar-actions">
+          <div class="streak-chip" title="Study streak">
+            <i data-lucide="flame"></i>
+            <strong id="streak-count">1</strong>
+          </div>
+          <button class="profile-button" id="account-button" type="button">
+            <span class="avatar" id="avatar">Y</span>
+            <span id="account-name">Create profile</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+        </div>
+      </header>
+
+      <div id="app-view" tabindex="-1"></div>
+    </main>
+  </div>
+
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <button class="is-active" type="button" data-route="dashboard" aria-label="Learn">
+      <i data-lucide="map"></i><span>Learn</span>
+    </button>
+    <button type="button" data-route="practice" aria-label="Practice">
+      <i data-lucide="code-2"></i><span>Practice</span>
+    </button>
+    <a href="../lectures/" aria-label="Podcasts">
+      <i data-lucide="headphones"></i><span>Listen</span>
+    </a>
+    <button type="button" data-route="leaderboard" aria-label="Leaderboard">
+      <i data-lucide="trophy"></i><span>Ranks</span>
+    </button>
+  </nav>
+
+  <dialog id="account-dialog">
+    <form method="dialog" class="dialog-shell" id="account-form">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow">Study profile</p>
+          <h2 id="dialog-title">Create your profile</h2>
+        </div>
+        <button class="icon-button" type="button" id="close-dialog" aria-label="Close">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div id="solo-account-fields">
+        <label>
+          Display name
+          <input id="solo-username" name="solo-username" maxlength="24" autocomplete="nickname" placeholder="Your study name">
+        </label>
+        <p class="field-note">This profile stays on this device until community sync is connected.</p>
+      </div>
+
+      <div id="online-account-fields" hidden>
+        <div class="auth-tabs" role="tablist">
+          <button class="auth-tab is-active" type="button" data-auth-mode="signup">Create account</button>
+          <button class="auth-tab" type="button" data-auth-mode="signin">Sign in</button>
+        </div>
+        <label id="username-field">
+          Display name
+          <input id="auth-username" name="username" maxlength="24" autocomplete="nickname">
+        </label>
+        <label>
+          Email
+          <input id="auth-email" name="email" type="email" autocomplete="email">
+        </label>
+        <label>
+          Password
+          <input id="auth-password" name="password" type="password" minlength="8" autocomplete="new-password">
+        </label>
+      </div>
+
+      <p class="form-error" id="account-error" role="alert"></p>
+      <button class="primary-button full-width" id="account-submit" type="submit">Create profile</button>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="course-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
