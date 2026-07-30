@@ -437,7 +437,7 @@
       ${!backendEnabled ? `
         <div class="mode-banner">
           ${icon("wifi-off")}
-          <p><strong>Solo grading mode.</strong> Your draft and rubric review work now. Secure AI feedback turns on when community sync is connected.</p>
+          <p><strong>Solo grading mode.</strong> Your draft and worked answer keys are available now. Secure AI feedback turns on when community sync is connected.</p>
         </div>
       ` : ""}
 
@@ -468,19 +468,19 @@
             <div class="workspace-actions">
               <span class="save-state" id="draft-state">Saved on this device</span>
               <div class="button-row">
-                <button class="secondary-button" type="button" data-show-rubric="${escapeHTML(selected.id)}">
-                  ${icon("list-checks")} View rubric
+                <button class="secondary-button" type="button" data-show-answer-key="${escapeHTML(selected.id)}">
+                  ${icon("key-round")} View answer key
                 </button>
                 <button class="primary-button" type="button" data-grade="${escapeHTML(selected.id)}">
                   ${icon(backendEnabled ? "sparkles" : "clipboard-check")}
-                  ${backendEnabled ? "Grade with AI" : "Check against rubric"}
+                  ${backendEnabled ? "Grade with AI" : "Check answer"}
                 </button>
               </div>
             </div>
 
-            <div class="rubric-panel" id="rubric-panel" hidden>
-              <h3>Grading rubric</h3>
-              <ul>${selected.rubric.map(item => `<li>${escapeHTML(item)}</li>`).join("")}</ul>
+            <div class="answer-key-panel" id="answer-key-panel" hidden>
+              <h3>Worked answer key</h3>
+              <pre><code>${escapeHTML(selected.answerKey)}</code></pre>
             </div>
 
             <div id="grading-output">
@@ -532,14 +532,14 @@
     saveDraft();
 
     if (!backendEnabled) {
-      document.querySelector("#rubric-panel").hidden = false;
+      document.querySelector("#answer-key-panel").hidden = false;
       document.querySelector("#grading-output").innerHTML = `
         <section class="grading-result">
-          <h3>Self-check pass</h3>
-          <p>Compare your answer against every rubric item above. Mark a criterion satisfied only when you can point to the exact line or explanation that earns it.</p>
+          <h3>Answer key opened</h3>
+          <p>Compare the behavior, type, and reasoning in your draft with the worked answer above. Equivalent correct implementations may use different names or syntax.</p>
         </section>
       `;
-      showToast("Rubric opened.");
+      showToast("Answer key opened.");
       return;
     }
 
@@ -562,6 +562,7 @@
           prompt: practice.prompt,
           starter: practice.starter,
           rubric: practice.rubric,
+          answer_key: practice.answerKey,
           answer
         }
       });
@@ -876,10 +877,10 @@
         return;
       }
 
-      const rubricTarget = event.target.closest("[data-show-rubric]");
-      if (rubricTarget) {
-        const rubric = document.querySelector("#rubric-panel");
-        rubric.hidden = !rubric.hidden;
+      const answerKeyTarget = event.target.closest("[data-show-answer-key]");
+      if (answerKeyTarget) {
+        const answerKey = document.querySelector("#answer-key-panel");
+        answerKey.hidden = !answerKey.hidden;
         return;
       }
 

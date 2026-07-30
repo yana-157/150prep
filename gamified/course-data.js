@@ -1653,6 +1653,371 @@ window.COURSE_MODULES = [
   }
 ];
 
+const PRACTICE_ANSWER_KEYS = {
+  "foundations-trace": `Type: int * string
+
+Evaluation:
+let
+  val p = (3 + 2, "cmu")
+in
+  (#1 p * 2, #2 p ^ "150")
+end
+
+=> bind p = (5, "cmu")
+=> (#1 (5, "cmu") * 2, #2 (5, "cmu") ^ "150")
+=> (5 * 2, "cmu" ^ "150")
+=> (10, "cmu150")`,
+
+  "foundations-function": `fun repeatPair n = (n, 2 * n)
+
+Most general type:
+repeatPair : int -> int * int
+
+Test:
+repeatPair 5 = (5, 10)  (* evaluates to true *)`,
+
+  "scope-closure": `result : int
+result = 7
+
+addOffset closes over the binding offset = 4 that is in scope when the function is created. The later declaration shadows offset with 100, but it does not mutate the captured binding.`,
+
+  "scope-pattern": `fun head [] = NONE
+  | head (x :: _) = SOME x
+
+Most general type:
+head : 'a list -> 'a option`,
+
+  "lists-alternate": `fun splitAlternating [] = ([], [])
+  | splitAlternating [x] = ([x], [])
+  | splitAlternating (x :: y :: xs) =
+      let
+        val (evens, odds) = splitAlternating xs
+      in
+        (x :: evens, y :: odds)
+      end
+
+splitAlternating : 'a list -> 'a list * 'a list`,
+
+  "lists-tail": `fun reverse xs =
+  let
+    fun loop ([], acc) = acc
+      | loop (x :: rest, acc) = loop (rest, x :: acc)
+  in
+    loop (xs, [])
+  end
+
+Invariant: loop (rest, acc) returns rev rest @ acc, which is the reverse of the original input at every call.`,
+
+  "trees-map": `datatype 'a tree = Empty
+                 | Node of 'a tree * 'a * 'a tree
+
+fun treeMap f Empty = Empty
+  | treeMap f (Node (left, x, right)) =
+      Node (treeMap f left, f x, treeMap f right)
+
+treeMap : ('a -> 'b) -> 'a tree -> 'b tree`,
+
+  "trees-traversal": `fun inorderAcc (Empty, acc) = acc
+  | inorderAcc (Node (left, x, right), acc) =
+      inorderAcc (left, x :: inorderAcc (right, acc))
+
+Meaning: inorderAcc (t, acc) returns inorder(t) @ acc. Therefore an ordinary traversal is inorderAcc (t, []).`,
+
+  "cost-recurrence": `Work:
+W(1) = Theta(1)
+W(n) = 2W(n/2) + Theta(1)
+
+Span:
+S(1) = Theta(1)
+S(n) = max(S(n/2), S(n/2)) + Theta(1)
+     = S(n/2) + Theta(1)
+
+Bounds:
+W(n) = Theta(n)
+S(n) = Theta(log n)`,
+
+  "cost-inorder": `The append xs @ ys takes Theta(length xs) work. On a left-skewed tree, each node appends an inorder list whose size is almost the size of the remaining tree:
+
+Theta(1 + 2 + ... + n) = Theta(n^2).
+
+Repair:
+fun inorderAcc (Empty, acc) = acc
+  | inorderAcc (Node (left, x, right), acc) =
+      inorderAcc (left, x :: inorderAcc (right, acc))
+
+fun inorder t = inorderAcc (t, [])
+
+Each node is processed once, so the repaired traversal has Theta(n) work.`,
+
+  "poly-trace": `Assign fresh variables:
+f : alpha
+x : beta
+y : gamma
+f x : delta
+f y : epsilon
+
+Constraints:
+alpha = beta -> delta
+alpha = gamma -> epsilon
+
+Solving:
+beta = gamma
+delta = epsilon
+
+Most general type:
+('a -> 'b) -> 'a * 'a -> 'b * 'b
+
+The arrows associate to the right, so this means ('a -> 'b) -> ('a * 'a -> 'b * 'b).`,
+
+  "poly-contradiction": `The expression is NWT.
+
+Let g : alpha and x : beta.
+
+Constraints:
+g x : bool, so alpha = beta -> bool
+x + 1 requires beta = int
+x ^ "!" requires beta = string
+
+The smallest conflict is beta = int and beta = string. Both branches of an if expression are type-checked, even when one branch would not run.`,
+
+  "hofs-fold": `val keepAndSquareOdds =
+  map (fn x => x * x)
+  o filter (fn x => x mod 2 <> 0)
+
+keepAndSquareOdds : int list -> int list
+
+filter keeps the surviving elements in their original relative order, and map replaces each element without rearranging the list. Their composition therefore preserves order.`,
+
+  "hofs-staged": `(* Coefficients are [a0, a1, ..., an], from low to high degree. *)
+fun prepareEval coefficients =
+  let
+    val highToLow = rev coefficients
+  in
+    fn x =>
+      foldl (fn (coefficient, value) =>
+                value * x + coefficient)
+            0
+            highToLow
+  end
+
+prepareEval : int list -> int -> int
+
+The outer call reverses the coefficient list once. Each later call supplies x and performs Horner evaluation without repeating that preprocessing.`,
+
+  "cps-product": `fun productk [] k = k 1
+  | productk (x :: xs) k =
+      productk xs (fn tailProduct => k (x * tailProduct))
+
+productk : int list -> (int -> 'a) -> 'a
+
+The recursive call is the final operation; multiplication is added to the continuation.`,
+
+  "cps-two": `fun lastk [] success failure = failure ()
+  | lastk [x] success failure = success x
+  | lastk (_ :: xs) success failure =
+      lastk xs success failure
+
+lastk : 'a list -> ('a -> 'b) -> (unit -> 'b) -> 'b
+
+No SOME or NONE value is built: the chosen continuation represents the corresponding option case.`,
+
+  "exceptions-trace": `Type: int
+Outcome: 9
+
+10 div 0 raises Div. The inner handler only matches Match, so Div propagates out of it. The outer handler has a Div clause, which catches the exception and returns 9. The Fail clause is never used.`,
+
+  "exceptions-control": `datatype 'a tree = Empty
+                 | Node of 'a tree * 'a * 'a tree
+
+fun existsFast p tree =
+  let
+    exception Found
+
+    fun visit Empty = ()
+      | visit (Node (left, x, right)) =
+          if p x then
+            raise Found
+          else
+            (visit left; visit right)
+  in
+    (visit tree; false) handle Found => true
+  end
+
+existsFast : ('a -> bool) -> 'a tree -> bool`,
+
+  "regex-build": `val bStar = Star (Char #"b")
+
+val exactlyTwoA =
+  Concat (bStar,
+    Concat (Char #"a",
+      Concat (bStar,
+        Concat (Char #"a", bStar))))
+
+This denotes b* a b* a b*: the only two a characters are explicit, while every other position may contain any number of b characters.`,
+
+  "regex-match": `Initial input:
+[#"a", #"a", #"b"]
+
+Star candidates passed to the continuation:
+0 repetitions -> [#"a", #"a", #"b"]  (Char b fails)
+1 repetition  -> [#"a", #"b"]        (Char b fails)
+2 repetitions -> [#"b"]              (Char b succeeds)
+
+Suffix given to Char b:
+[#"b"]
+
+After Char b consumes the symbol:
+[]
+
+Final continuation:
+fn rest => null rest receives [], so it returns true. Therefore accept returns true.`,
+
+  "modules-signature": `signature STACK = sig
+  type 'a t
+
+  val singleton : 'a -> 'a t
+  val push : 'a -> 'a t -> 'a t
+  val top : 'a t -> 'a
+  val pop : 'a t -> 'a t option
+end
+
+The abstract type keeps the representation hidden. top is total because every t is nonempty; pop returns NONE when removing the top would leave no nonempty stack.`,
+
+  "modules-ascription": `1. Transparent ascription.
+
+Use : and expose the intended equality, for example:
+structure Counter : COUNTER where type t = int = Impl
+
+Clients can then use Counter.t where an int is required.
+
+2. Opaque ascription.
+
+Use:
+structure Safe :> SAFE = Impl
+
+Clients can use exported constructors and observers, but cannot rely on the hidden representation of Safe.t or construct unchecked values. The implementation still has a concrete representation; the interface hides its equality from clients.`,
+
+  "functor-interface": `signature ORDERED = sig
+  type t
+  val compare : t * t -> order
+end
+
+functor MkSet (Element : ORDERED)
+  :> SET where type elem = Element.t =
+struct
+  type elem = Element.t
+  (* implementation uses Element.compare *)
+end
+
+The where type equation preserves the public equality between the resulting set element type and Element.t.`,
+
+  "rbt-trace": `After inserting 3:
+The new leaf is red during ins; blackening gives root 3(B).
+
+After inserting 2:
+3(B) has left child 2(R). There is no red-red violation.
+
+After inserting 1:
+The raw BST insertion creates 3(B) ->left 2(R) ->left 1(R).
+
+Repair:
+This is the left-left red-red case. Rotate right around 3 and recolor so 2 becomes the local root and 1 and 3 become black children. Blacken the final root.
+
+Final tree:
+      2(B)
+     /    \\
+  1(B)   3(B)
+
+All empty leaves are black, both root-to-leaf paths have equal black height, and inorder order is 1, 2, 3.`,
+
+  "sequences-tabulate": `fun squares n =
+  Seq.tabulate (fn i => i * i) n
+
+Work: O(n)
+Span: O(log n)
+
+There are n constant-work index computations. The span follows the course Seq.tabulate contract.`,
+
+  "sequences-pipeline": `fun positiveSquareSum s =
+  Seq.reduce (op +) 0
+    (Seq.map (fn x => x * x)
+      (Seq.filter (fn x => x > 0) s))
+
+Let n = Seq.length s and let m <= n values survive filter.
+
+Work:
+O(n) for filter + O(m) for map + O(m) for reduce = O(n)
+
+Span:
+O(log n) + O(log m) + O(log m) = O(log n)
+
+The addition reducer is associative and 0 is its identity.`,
+
+  "lazy-take": `datatype 'a stream = Cons of 'a * (unit -> 'a stream)
+
+fun take 0 _ = []
+  | take 1 (Cons (x, _)) = [x]
+  | take n (Cons (x, tail)) =
+      x :: take (n - 1) (tail ())
+
+take : int -> 'a stream -> 'a list
+
+For n > 0, this returns the first n elements in order and forces exactly n - 1 tails. The n = 1 clause avoids forcing one unnecessary tail.`,
+
+  "refs-trace": `After val a = ref 2:
+a -> cell L1 containing 2
+
+After val b = a:
+a -> L1
+b -> L1
+
+After val c = ref (!a):
+a -> L1 containing 2
+b -> L1 containing 2
+c -> cell L2 containing 2
+
+After b := 5:
+L1 now contains 5, so both a and b observe 5.
+L2 still contains 2.
+
+Final:
+result = (5, 2)
+
+Aliases: a and b alias the same cell L1. c points to a separate cell L2.`,
+
+  "async-trace": `1. Promise.resolve(3) creates a fulfilled promise carrying 3.
+2. The first then callback receives 3 and returns 5, so its promise is fulfilled with 5.
+3. The second then callback receives 5 and throws Error("5"), so its promise is rejected with that error.
+4. catch receives the rejection and returns 10, recovering to a promise fulfilled with 10.
+5. The final then callback receives 10 and returns 20.
+
+Final outcome: a fulfilled promise carrying 20.`,
+
+  "async-parallel": `async function loadPage() {
+  try {
+    const profilePromise = loadProfile();
+    const assignmentsPromise = loadAssignments();
+
+    const [profile, assignments] = await Promise.all([
+      profilePromise,
+      assignmentsPromise
+    ]);
+
+    render(profile, assignments);
+  } catch (error) {
+    renderError(error);
+  }
+}
+
+Both operations start before either is awaited. Promise.all joins them; if either rejects, control moves to catch.`
+};
+
+window.COURSE_MODULES.forEach(module => {
+  module.practice.forEach(practice => {
+    practice.answerKey = PRACTICE_ANSWER_KEYS[practice.id];
+  });
+});
+
 window.PREP_BADGES = [
   { id: "first-check", title: "First constraint", detail: "Pass one checkpoint", icon: "badge-check", test: stats => stats.completedStages >= 1 },
   { id: "type-tracer", title: "Type tracer", detail: "Finish polymorphism", icon: "braces", test: stats => stats.completedModules.includes("polymorphism") },

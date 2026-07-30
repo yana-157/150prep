@@ -912,7 +912,7 @@ code {
   font-size: 12px;
 }
 
-.rubric-panel,
+.answer-key-panel,
 .grading-result {
   margin-top: 16px;
   border: 1px solid var(--line);
@@ -921,16 +921,31 @@ code {
   background: #fafafa;
 }
 
-.rubric-panel h3,
+.answer-key-panel h3,
 .grading-result h3 {
   margin: 0 0 9px;
   font-size: 15px;
 }
 
-.rubric-panel ul,
 .grading-result ul {
   margin: 0;
   padding-left: 18px;
+}
+
+.answer-key-panel pre {
+  max-width: 100%;
+  margin: 0;
+  overflow: auto;
+  border-radius: 6px;
+  padding: 16px;
+  background: #20232a;
+  color: #f6f7f8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.answer-key-panel code {
+  font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 .grading-score {
